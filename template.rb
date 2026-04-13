@@ -83,6 +83,10 @@ gem_group :development do
   add_gem_once "letter_opener_web", "~> 3.0"
 end
 
+gem_group :test do
+  add_gem_once "simplecov"
+end
+
 # =============================================================================
 # Step 3: Initializers
 # =============================================================================
