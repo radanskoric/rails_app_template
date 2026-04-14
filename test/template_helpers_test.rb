@@ -74,15 +74,6 @@ class AddGemOnceTest < TemplateHelpersTestCase
   end
 end
 
-class AddGemGroupOnceTest < TemplateHelpersTestCase
-  def test_delegates_to_gem_group
-    add_gem_group_once(:development, :test) { }
-
-    assert_equal 1, @gem_group_calls.size
-    assert_equal [:development, :test], @gem_group_calls.first[:groups]
-  end
-end
-
 class InjectOnceTest < TemplateHelpersTestCase
   def test_injects_when_content_not_present
     File.write("routes.rb", <<~RUBY)

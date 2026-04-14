@@ -17,10 +17,6 @@ module TemplateHelpers
     gem(name, *args, **options)
   end
 
-  def add_gem_group_once(*groups, &block)
-    gem_group(*groups, &block)
-  end
-
   def inject_once(file, content, **options)
     file_content = File.read(file)
     return if file_content.include?(content.strip)
