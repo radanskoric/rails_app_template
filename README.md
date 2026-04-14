@@ -23,28 +23,24 @@ An opinionated, idempotent Rails application template for starting new projects 
 
 The template **cannot** retroactively change options that are set at `rails new` time. I suggest passing the following flags:
 
-| Flag | Why |
-|------|-----|
-| `--css=tailwind` | Tailwind CSS setup (cannot be added after the fact) |
-| `--asset-pipeline=propshaft` | Uses Propshaft instead of Sprockets |
-| `--skip-jbuilder` | Not needed for this stack |
-| `--skip-bootsnap` | Not used in this stack |
-| `--devcontainer` | Generates `.devcontainer/` skeleton (template overwrites it) |
+| Flag                         | Why                                                          |
+| ---------------------------- | ------------------------------------------------------------ |
+| `--css=tailwind`             | Tailwind CSS setup (cannot be added after the fact)          |
+| `--asset-pipeline=propshaft` | Uses Propshaft instead of Sprockets                          |
+| `--skip-jbuilder`            | Not needed for this stack                                    |
+| `--skip-bootsnap`            | Not used in this stack                                       |
+| `--devcontainer`             | Generates `.devcontainer/` skeleton (template overwrites it) |
 
-Or, given as a single line, including the template:
+Or, given as a single line, including the template (assuming the template repo is cloned alongside the app):
 
 ```bash
-rails new myapp --css=tailwind --asset-pipeline=propshaft --skip-jbuilder --skip-bootsnap --devcontainer -m https://raw.githubusercontent.com/radanskoric/rails_app_template/main/template.rb
+rails new myapp --css=tailwind --asset-pipeline=propshaft --skip-jbuilder --skip-bootsnap --devcontainer -m ../rails_app_template/template.rb
 ```
 
 ### Apply to an existing application
 
 ```bash
-# From a local clone:
 bin/rails app:template LOCATION=path/to/rails_app_template/template.rb
-
-# From GitHub:
-bin/rails app:template LOCATION=https://raw.githubusercontent.com/radanskoric/rails_app_template/main/template.rb
 ```
 
 ## Idempotency
@@ -63,4 +59,22 @@ After applying the template, you'll want to configure:
 
 - **Litestream**: Set `LITESTREAM_REPLICA_BUCKET`, `LITESTREAM_REPLICA_KEY_ID`, `LITESTREAM_REPLICA_KEY_SECRET`, and `LITESTREAM_REPLICA_ENDPOINT` environment variables for production.
 - **DevContainer**: The default compose.yaml uses RustFS with default credentials. For the first run, log into RustFS at `localhost:9001` with the default keys and create a backup bucket.
+
+## Development
+
+The template's supporting code lives in `lib/`, with corresponding tests in `test/`.
+
+```bash
+# Install dependencies
+bundle install
+
+# Run all tests
+bundle exec rake test
+
+# Run only fast unit tests
+bundle exec rake test_unit
+
+# Run only integration tests (slow — generates a full Rails app)
+bundle exec rake test_integration
+```
 

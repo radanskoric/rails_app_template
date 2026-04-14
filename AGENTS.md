@@ -28,7 +28,9 @@ This template provides a consistent starting point for new Rails applications wi
 
 ```
 rails_app_template/
-├── template.rb       # Main template script — all logic lives here
+├── template.rb       # Main template script — orchestrates all steps
+├── lib/              # Supporting Ruby code
+│   └── template_helpers.rb  # Idempotent helper methods (module)
 ├── files/            # Static files copied verbatim into target apps
 │   ├── config/
 │   │   ├── initializers/    # litestream.rb, log_bench.rb, reactionview.rb
@@ -37,6 +39,12 @@ rails_app_template/
 │   ├── test/                # test_helper.rb, application_system_test_case.rb
 │   ├── .github/             # CI workflow, dependabot config
 │   └── .devcontainer/       # Dockerfile, compose.yaml, devcontainer.json
+├── test/             # Tests for the template itself
+│   ├── test_helper.rb
+│   ├── template_helpers_test.rb  # Unit tests for helpers
+│   └── integration_test.rb       # Full apply + idempotency test
+├── Gemfile
+├── Rakefile
 ├── README.md
 └── AGENTS.md
 ```
@@ -47,7 +55,7 @@ rails_app_template/
 
 ### How idempotency is enforced
 
-The template defines helper methods at the top of `template.rb`:
+The template uses helper methods defined in `lib/template_helpers.rb`:
 
 - **`add_gem_once(name, ...)`** — Adds a gem only if it's not already in the Gemfile. Always use this instead of bare `gem()`.
 - **`inject_once(file, content, ...)`** — Injects content into a file only if the content isn't already present. Always use this instead of bare `inject_into_file()`.
@@ -64,20 +72,17 @@ The template defines helper methods at the top of `template.rb`:
 ### Testing changes
 
 ```bash
-# 1. Create a fresh app
-rails new testapp --css=tailwind --asset-pipeline=propshaft --skip-jbuilder --devcontainer
+# Run all tests (unit + integration)
+bundle exec rake test
 
-# 2. Apply the template
-cd testapp
-bin/rails app:template LOCATION=../rails_app_template/template.rb
+# Run only fast unit tests for helpers
+bundle exec rake test_unit
 
-# 3. Commit the result
-git add -A && git commit -m "first apply"
-
-# 4. Apply again — should produce no changes
-bin/rails app:template LOCATION=../rails_app_template/template.rb
-git diff  # Must be empty
+# Run only integration tests (slow — generates a full Rails app)
+bundle exec rake test_integration
 ```
+
+The integration test automatically creates a fresh Rails app, applies the template, verifies key outcomes, then re-applies and checks that `git diff` is empty (idempotency).
 
 ## Code Style
 

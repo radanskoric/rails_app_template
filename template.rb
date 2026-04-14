@@ -7,54 +7,9 @@
 #
 # This template is idempotent — safe to re-run on existing projects.
 
-TEMPLATE_ROOT = __dir__
-GITHUB_RAW_BASE = "https://raw.githubusercontent.com/radanskoric/rails_app_template/main"
-
-def template_running_locally?
-  File.directory?(File.join(TEMPLATE_ROOT, "files"))
-end
-
-# =============================================================================
-# Idempotency Helpers
-# =============================================================================
-
-def add_gem_once(name, *args, **options)
-  gemfile_content = File.read("Gemfile")
-  return if gemfile_content.include?("\"#{name}\"")
-  gem(name, *args, **options)
-end
-
-def add_gem_group_once(*groups, &block)
-  gem_group(*groups, &block)
-end
-
-def inject_once(file, content, **options)
-  file_content = File.read(file)
-  return if file_content.include?(content.strip)
-  inject_into_file(file, content, **options)
-end
-
-def read_template_file(source_path)
-  if template_running_locally?
-    File.read(File.join(TEMPLATE_ROOT, "files", source_path))
-  else
-    require "open-uri"
-    URI.open("#{GITHUB_RAW_BASE}/files/#{source_path}").read
-  end
-end
-
-def create_or_replace_file(destination, source_path = nil, &block)
-  if source_path
-    content = read_template_file(source_path)
-    create_file(destination, content, force: true)
-  elsif block_given?
-    create_file(destination, force: true, &block)
-  end
-end
-
-def uncomment_lines_matching(file, pattern)
-  gsub_file(file, /^(\s*)#\s*(#{pattern})/, '\1\2')
-end
+require_relative "lib/template_helpers"
+TemplateHelpers.template_root = __dir__
+extend TemplateHelpers
 
 # =============================================================================
 # Step 2: Gems
@@ -73,19 +28,14 @@ add_gem_once "amazing_print"
 # Deployment
 add_gem_once "dockerfile-rails", ">= 1.7", group: :development
 
-gem_group :development, :test do
-  add_gem_once "capybara"
-end
+# Testing
+add_gem_once "capybara", group: [:development, :test]
+add_gem_once "simplecov", group: :test
 
-gem_group :development do
-  add_gem_once "log_bench"
-  add_gem_once "letter_opener"
-  add_gem_once "letter_opener_web", "~> 3.0"
-end
-
-gem_group :test do
-  add_gem_once "simplecov"
-end
+# Dev tools
+add_gem_once "log_bench", group: :development
+add_gem_once "letter_opener", group: :development
+add_gem_once "letter_opener_web", "~> 3.0", group: :development
 
 # =============================================================================
 # Step 3: Initializers
@@ -110,13 +60,19 @@ dev_env_file = "config/environments/development.rb"
 dev_content = File.read(dev_env_file)
 
 unless dev_content.include?(":letter_opener")
-  gsub_file dev_env_file,
-    /config\.action_mailer\.delivery_method\s*=.*$/,
-    "config.action_mailer.delivery_method = :letter_opener"
+  if dev_content.match?(/config\.action_mailer\.delivery_method\s*=/)
+    gsub_file dev_env_file,
+      /config\.action_mailer\.delivery_method\s*=.*$/,
+      "config.action_mailer.delivery_method = :letter_opener"
+  else
+    inject_once dev_env_file,
+      "\n  config.action_mailer.delivery_method = :letter_opener\n",
+      before: /^end/
+  end
 
   inject_once dev_env_file,
-    "\n  config.action_mailer.perform_deliveries = true\n",
-    after: "config.action_mailer.delivery_method = :letter_opener"
+    "  config.action_mailer.perform_deliveries = true\n",
+    after: "config.action_mailer.delivery_method = :letter_opener\n"
 end
 
 # =============================================================================
