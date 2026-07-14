@@ -7,35 +7,35 @@
 #
 # This template is idempotent — safe to re-run on existing projects.
 
-require_relative "lib/template_helpers"
-TemplateHelpers.template_root = __dir__
-extend TemplateHelpers
+require_relative "lib/idempotent_template_helpers"
+IdempotentTemplateHelpers.template_root = __dir__
+extend IdempotentTemplateHelpers
 
 # =============================================================================
 # Step 2: Gems
 # =============================================================================
 
 # View rendering
-add_gem_once "reactionview"
-add_gem_once "herb", "~> 0.9"
+gem "reactionview"
+gem "herb", "~> 0.9"
 
 # Database backup/restore
-add_gem_once "litestream", "~> 0.14.0"
+gem "litestream", "~> 0.14.0"
 
 # QoL for developers
-add_gem_once "amazing_print"
+gem "amazing_print"
 
 # Deployment
-add_gem_once "dockerfile-rails", ">= 1.7", group: :development
+gem "dockerfile-rails", ">= 1.7", group: :development
 
 # Testing
-add_gem_once "capybara", group: [:development, :test]
-add_gem_once "simplecov", group: :test
+gem "capybara", group: [:development, :test]
+gem "simplecov", group: :test
 
 # Dev tools
-add_gem_once "log_bench", group: :development
-add_gem_once "letter_opener", group: :development
-add_gem_once "letter_opener_web", "~> 3.0", group: :development
+gem "log_bench", group: :development
+gem "letter_opener", group: :development
+gem "letter_opener_web", "~> 3.0", group: :development
 
 # =============================================================================
 # Step 3: Initializers
@@ -65,12 +65,12 @@ unless dev_content.include?(":letter_opener")
       /config\.action_mailer\.delivery_method\s*=.*$/,
       "config.action_mailer.delivery_method = :letter_opener"
   else
-    inject_once dev_env_file,
+    inject_into_file dev_env_file,
       "\n  config.action_mailer.delivery_method = :letter_opener\n",
       before: /^end/
   end
 
-  inject_once dev_env_file,
+  inject_into_file dev_env_file,
     "  config.action_mailer.perform_deliveries = true\n",
     after: "config.action_mailer.delivery_method = :letter_opener\n"
 end
@@ -83,13 +83,13 @@ routes_file = "config/routes.rb"
 routes_content = File.read(routes_file)
 
 unless routes_content.include?("LetterOpenerWeb")
-  inject_once routes_file,
+  inject_into_file routes_file,
     "\n  mount LetterOpenerWeb::Engine, at: \"/letter_opener\" if Rails.env.development?\n",
     before: /^end/
 end
 
 unless routes_content.include?("Litestream")
-  inject_once routes_file,
+  inject_into_file routes_file,
     "  mount Litestream::Engine, at: \"/litestream\" if Rails.env.development?\n",
     before: /^end/
 end

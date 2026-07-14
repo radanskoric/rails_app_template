@@ -30,7 +30,7 @@ This template provides a consistent starting point for new Rails applications wi
 rails_app_template/
 ├── template.rb       # Main template script — orchestrates all steps
 ├── lib/              # Supporting Ruby code
-│   └── template_helpers.rb  # Idempotent helper methods (module)
+│   └── idempotent_template_helpers.rb  # IdempotentTemplateHelpers module
 ├── files/            # Static files copied verbatim into target apps
 │   ├── config/
 │   │   ├── initializers/    # litestream.rb, log_bench.rb, reactionview.rb
@@ -41,7 +41,7 @@ rails_app_template/
 │   └── .devcontainer/       # Dockerfile, compose.yaml, devcontainer.json
 ├── test/             # Tests for the template itself
 │   ├── test_helper.rb
-│   ├── template_helpers_test.rb  # Unit tests for helpers
+│   ├── idempotent_template_helpers_test.rb  # Unit tests for helpers
 │   └── integration_test.rb       # Full apply + idempotency test
 ├── Gemfile
 ├── Rakefile
@@ -55,16 +55,16 @@ rails_app_template/
 
 ### How idempotency is enforced
 
-The template uses helper methods defined in `lib/template_helpers.rb`:
+The template extends `IdempotentTemplateHelpers` (defined in `lib/idempotent_template_helpers.rb`), which redefines standard Rails template methods to be idempotent:
 
-- **`add_gem_once(name, ...)`** — Adds a gem only if it's not already in the Gemfile. Always use this instead of bare `gem()`.
-- **`inject_once(file, content, ...)`** — Injects content into a file only if the content isn't already present. Always use this instead of bare `inject_into_file()`.
+- **`gem(name, ...)`** — Overrides the Rails default. Adds a gem only if it's not already in the Gemfile; delegates to the original via `super`.
+- **`inject_into_file(file, content, ...)`** — Overrides the Rails default. Injects content only if not already present; delegates to the original via `super`.
 - **`create_or_replace_file(destination, source)`** — Creates or overwrites a file with content from `files/`. Use for static files that should match the template exactly.
 - **`uncomment_lines_matching(file, pattern)`** — Uncomments lines matching a pattern. Safe to re-run since already-uncommented lines won't match the commented pattern.
 
 ### Rules for contributors
 
-1. **Never use bare `gem()`, `inject_into_file()`, or `route()`** — always use the idempotent wrappers.
+1. **Always use `extend IdempotentTemplateHelpers`** — this makes `gem()` and `inject_into_file()` idempotent automatically. Do not bypass by calling the originals directly.
 2. **Always test idempotency**: apply the template to a fresh `rails new` app, then apply it again. The second run should produce zero changes.
 3. **Static files go in `files/`** — avoid heredocs in `template.rb` for multi-line file content.
 4. **Guard conditional modifications** — when using `gsub_file`, ensure the pattern handles both the original and already-modified states.

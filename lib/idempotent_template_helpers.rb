@@ -1,30 +1,30 @@
 # frozen_string_literal: true
 
-# Idempotent helper methods for Rails application templates.
+# Idempotent overrides of Rails application template helpers.
 #
-# This module is designed to be included in a Rails template context
-# (where methods like `gem`, `gem_group`, `inject_into_file`,
-# `create_file`, and `gsub_file` are available).
+# This module redefines `gem` and `inject_into_file` to be idempotent,
+# delegating to the originals via `super` when work is needed.
 #
-# Set TemplateHelpers.template_root before use.
-module TemplateHelpers
+# Designed to be `extend`ed in a Rails template context or `prepend`ed
+# in tests. Set IdempotentTemplateHelpers.template_root before use.
+module IdempotentTemplateHelpers
   class << self
     attr_accessor :template_root
   end
-  def add_gem_once(name, *args, **options)
+  def gem(name, *args, **options)
     gemfile_content = File.read("Gemfile")
     return if gemfile_content.include?("\"#{name}\"")
-    gem(name, *args, **options)
+    super
   end
 
-  def inject_once(file, content, **options)
+  def inject_into_file(file, content, **options)
     file_content = File.read(file)
     return if file_content.include?(content.strip)
-    inject_into_file(file, content, **options)
+    super
   end
 
   def read_template_file(source_path)
-    File.read(File.join(TemplateHelpers.template_root, "files", source_path))
+    File.read(File.join(IdempotentTemplateHelpers.template_root, "files", source_path))
   end
 
   def create_or_replace_file(destination, source_path = nil, &block)

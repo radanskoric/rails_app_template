@@ -2,14 +2,14 @@
 
 require_relative "test_helper"
 
-class AddGemOnceTest < TemplateHelpersTestCase
+class GemIdempotentTest < TemplateHelpersTestCase
   def test_adds_gem_when_not_present
     File.write("Gemfile", <<~GEMFILE)
       source "https://rubygems.org"
       gem "rails"
     GEMFILE
 
-    add_gem_once "sidekiq"
+    gem "sidekiq"
 
     assert_equal 1, @gem_calls.size
     assert_equal "sidekiq", @gem_calls.first[:name]
@@ -21,7 +21,7 @@ class AddGemOnceTest < TemplateHelpersTestCase
       gem "sidekiq"
     GEMFILE
 
-    add_gem_once "sidekiq"
+    gem "sidekiq"
 
     assert_empty @gem_calls
   end
@@ -31,7 +31,7 @@ class AddGemOnceTest < TemplateHelpersTestCase
       source "https://rubygems.org"
     GEMFILE
 
-    add_gem_once "sidekiq", "~> 7.0"
+    gem "sidekiq", "~> 7.0"
 
     assert_equal 1, @gem_calls.size
     assert_equal ["~> 7.0"], @gem_calls.first[:args]
@@ -42,7 +42,7 @@ class AddGemOnceTest < TemplateHelpersTestCase
       source "https://rubygems.org"
     GEMFILE
 
-    add_gem_once "sidekiq", group: :development
+    gem "sidekiq", group: :development
 
     assert_equal 1, @gem_calls.size
     assert_equal({ group: :development }, @gem_calls.first[:options])
@@ -56,7 +56,7 @@ class AddGemOnceTest < TemplateHelpersTestCase
       end
     GEMFILE
 
-    add_gem_once "sidekiq"
+    gem "sidekiq"
 
     assert_empty @gem_calls
   end
@@ -67,21 +67,21 @@ class AddGemOnceTest < TemplateHelpersTestCase
       gem "sidekiq-pro"
     GEMFILE
 
-    add_gem_once "sidekiq"
+    gem "sidekiq"
 
     assert_equal 1, @gem_calls.size
     assert_equal "sidekiq", @gem_calls.first[:name]
   end
 end
 
-class InjectOnceTest < TemplateHelpersTestCase
+class InjectIntoFileIdempotentTest < TemplateHelpersTestCase
   def test_injects_when_content_not_present
     File.write("routes.rb", <<~RUBY)
       Rails.application.routes.draw do
       end
     RUBY
 
-    inject_once "routes.rb", "  mount Foo::Engine\n", before: /^end/
+    inject_into_file "routes.rb", "  mount Foo::Engine\n", before: /^end/
 
     assert_equal 1, @inject_calls.size
     assert_equal "routes.rb", @inject_calls.first[:file]
@@ -94,7 +94,7 @@ class InjectOnceTest < TemplateHelpersTestCase
       end
     RUBY
 
-    inject_once "routes.rb", "  mount Foo::Engine\n", before: /^end/
+    inject_into_file "routes.rb", "  mount Foo::Engine\n", before: /^end/
 
     assert_empty @inject_calls
   end
@@ -106,7 +106,7 @@ class InjectOnceTest < TemplateHelpersTestCase
       end
     RUBY
 
-    inject_once "routes.rb", "\n  mount Foo::Engine\n", before: /^end/
+    inject_into_file "routes.rb", "\n  mount Foo::Engine\n", before: /^end/
 
     assert_empty @inject_calls
   end
@@ -115,7 +115,7 @@ end
 class ReadTemplateFileTest < TemplateHelpersTestCase
   def setup
     super
-    TemplateHelpers.template_root = File.expand_path("../..", __FILE__)
+    IdempotentTemplateHelpers.template_root = File.expand_path("../..", __FILE__)
   end
 
   def test_reads_file_from_files_directory
@@ -133,7 +133,7 @@ end
 class CreateOrReplaceFileTest < TemplateHelpersTestCase
   def setup
     super
-    TemplateHelpers.template_root = File.expand_path("../..", __FILE__)
+    IdempotentTemplateHelpers.template_root = File.expand_path("../..", __FILE__)
   end
 
   def test_creates_file_from_source_path

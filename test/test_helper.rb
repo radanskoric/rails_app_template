@@ -3,13 +3,14 @@
 require "minitest/autorun"
 require "tmpdir"
 require "fileutils"
-require_relative "../lib/template_helpers"
+require_relative "../lib/idempotent_template_helpers"
 
 # A test harness that simulates the Rails template generator context.
-# It includes TemplateHelpers and provides stub implementations of the
-# Rails generator methods that the helpers depend on.
+# It prepends IdempotentTemplateHelpers so that idempotent overrides of
+# `gem` and `inject_into_file` are found first, with `super` reaching
+# the stub implementations defined below.
 class TemplateHelpersTestCase < Minitest::Test
-  include TemplateHelpers
+  prepend IdempotentTemplateHelpers
 
   def setup
     @tmpdir = Dir.mktmpdir("template_test")
